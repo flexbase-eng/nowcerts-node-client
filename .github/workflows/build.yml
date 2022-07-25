@@ -1,0 +1,25 @@
+name: Build Branch
+on:
+  pull_request:
+
+jobs:
+  build:
+    uses: flexbase-eng/.github/.github/workflows/typescript.build.yml@main
+    with:
+      package_folder: output
+      revision: ${{github.run_number}}
+    secrets: inherit
+
+  coverage:
+    needs: build
+    uses: flexbase-eng/.github/.github/workflows/typescript.sonarcloud.yml@main
+    with:
+      project_key: flexbase-eng_${{ github.event.repository.name }}
+    secrets: inherit
+
+  publish:
+    needs: coverage
+    uses: flexbase-eng/.github/.github/workflows/typescript.publish.npm.yml@main
+    with:
+      tag: beta
+    secrets: inherit
