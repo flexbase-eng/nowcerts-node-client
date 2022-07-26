@@ -1,7 +1,7 @@
 {
-  "name": "@flexbase/template-typescript-package",
+  "name": "@flexbase/nowcerts-node-client",
   "version": "0.0.1",
-  "description": "template repo for npmjs packages utilizing typescript",
+  "description": "nodeJS client for nowCerts system",
   "author": {
     "name": "Flexbase Technologies",
     "email": "hello@flexbase.app",
@@ -9,18 +9,19 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/flexbase-eng/template-typescript-package/issues"
+    "url": "https://github.com/flexbase-eng/nowcerts-node-client/issues"
   },
-  "homepage": "https://github.com/flexbase-eng/template-typescript-package#readme",
+  "homepage": "https://github.com/flexbase-eng/nowcerts-node-client#readme",
   "keywords": [
-    "flexbase"
+    "flexbase",
+    "nowcerts"
   ],
   "contributors": [
-    "Chris Fowlkes <chris.fowlkes@flexbase.app>"
+    "Edison Giraldo <edison.giraldo@flexbase.app>"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/flexbase-eng/template-typescript-package.git"
+    "url": "git+https://github.com/flexbase-eng/nowcerts-node-client.git"
   },
   "main": "dist/index.js",
   "module": "dist/index.es.js",
@@ -49,11 +50,16 @@
       "eslint --max-warnings=0"
     ]
   },
-  "dependencies": {},
+  "dependencies": {
+    "@types/jsonwebtoken": "^8.5.8",
+    "@types/node-fetch": "^2.6.2",
+    "jsonwebtoken": "^8.5.1",
+    "node-fetch": "^3.2.9"
+  },
   "devDependencies": {
     "@flexbase/packr": "^1.2.0",
     "@types/jest": "^28.1.4",
-    "@types/node": "^18.0.3",
+    "@types/node": "^18.6.1",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.29.0",
     "esbuild": "^0.14.47",
