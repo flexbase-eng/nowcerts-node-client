@@ -6,7 +6,6 @@ import jwt from 'jsonwebtoken'
 const PROTOCOL = 'https'
 const API_HOST = 'api.nowcerts.com/api'
 const API_VER = '2018-06-22'
-const KEY_INFLECTION = 'camel'
 
 /*
  * These are the acceptable options to the creation of the Client:
@@ -45,7 +44,6 @@ export class NowCerts {
   host: string
   username: string
   password: string
-  keyInflection: string
   nowCertsVersion: string
   token: string | undefined
 
@@ -54,7 +52,6 @@ export class NowCerts {
     this.nowCertsVersion = options?.nowCertsVersion ?? API_VER
     this.username = username
     this.password = password
-    this.keyInflection = options?.keyInflection ?? KEY_INFLECTION
   }
 
   /*
