@@ -2,6 +2,10 @@
 import fetch from 'node-fetch'
 import path from 'path'
 import jwt from 'jsonwebtoken'
+import { setTimeout } from 'timers/promises'
+import camelCaseKeys from 'camelcase-keys'
+
+import { InsuredApi } from './insured'
 
 const PROTOCOL = 'https'
 const API_HOST = 'api.nowcerts.com/api'
@@ -28,7 +32,6 @@ export interface NowCertsOptions {
 type methodTypes = 'GET' | 'POST' | 'PUT' | 'DELETE'
 export interface fireOpts {
   method?: methodTypes
-  headers?: HeadersInit
   query?: { [index: string]: number | string | string[] | boolean }
   body?: object | object[] | FormData
 }
@@ -47,11 +50,15 @@ export class NowCerts {
   nowCertsVersion: string
   token: string | undefined
 
+  // link the client classes
+  insured: InsuredApi
+
   constructor (username: string, password: string, options?: NowCertsOptions) {
     this.host = options?.host ?? API_HOST
     this.nowCertsVersion = options?.nowCertsVersion ?? API_VER
     this.username = username
     this.password = password
+    this.insured = new InsuredApi(this)
   }
 
   /*
@@ -60,10 +67,8 @@ export class NowCerts {
    * puts the 'apiKey' into the headers for the call, and fires off the call
    * to the nowCerts host and returns the response.
    */
-  async fire(
-    uri: string,
-    { method = 'GET', headers, query, body }: fireOpts = {},
-  ): Promise<any> {
+  async fire(uri: string, { method = 'GET', query, body }: fireOpts = {}):
+  Promise<any> {
     // build up the complete url from the provided 'uri' and the 'host'
     const url = new URL(PROTOCOL+'://'+path.join(this.host, uri))
     if (query) {
@@ -75,37 +80,47 @@ export class NowCerts {
     }
 
     // check if we have a valid token
-    if (isTokenExpired(this.token)) {
+    if (isTokenExpired(this.token) && uri !== 'token') {
       const newToken = await this.getToken()
-      if (isEmpty(newToken?.token)) {
+      if (isEmpty(newToken?.payload?.access_token)) {
         return newToken
       }
-      this.token = newToken.token
+      this.token = newToken.payload?.access_token
     }
 
     // make the appropriate headers
-    headers = { ...headers,
-      Accept: 'application/json',
-      Authorization: `Bearer ${this.token}`,
-    }
+    const headers = { 'Accept': 'application/json' } as any;
 
+    // if we have a token, then add it to the request headers
+    if (typeof this.token === 'string') {
+      headers['Autorization'] = `Bearer ${this.token}`
+    }
+    
     const isForm = isFormData(body)
     if (!isForm) {
-      headers = { ...headers, 'Content-Type': 'application/json' }
+      headers['Content-Type'] = 'application/json'
     }
+
     // allow a few retries on the authentication token expiration
     let response: any
-    try {
-      response = await fetch(url.toString(), {
-        method,
-        body: isForm ? <FormData>body : (body ? JSON.stringify(body) : undefined),
-        headers,
-        redirect: 'follow',
-      })
-      const payload = await response?.json()
-      return { response, payload }
-    } catch (err) {
-      return { response }
+    for (let cnt = 0; cnt < 3; cnt++) {
+      try {
+        response = await fetch(url.toString(), {
+          method,
+          body: isForm ? <FormData>body : (body ? JSON.stringify(body) : undefined),
+          headers,
+          redirect: 'follow',
+        })
+        const payload = camelCaseKeys((await response.json()), { deep: true })
+        return { response, payload }
+      } catch (err) {
+        if (cnt === 2) {
+          return { response }
+        }
+
+        // wait for 100 msec and try it again
+        await setTimeout(100)
+      }
     }
   }
 
@@ -113,9 +128,7 @@ export class NowCerts {
    * Function to get an Access Token for the crentials (username and password)
    * provided in call to this client.
    */
-  private async getToken(): Promise <
-    { token?: string, error?: string, error_description?: string }
-  > {
+  private async getToken(): Promise<any> {
     return await this.fire('token', {
       method: 'POST',
       body: {
